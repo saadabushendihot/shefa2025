@@ -20,26 +20,23 @@
 
   <div class="container">
     <div class="alert alert-warning">
-      <strong><i class="fas fa-exclamation-triangle"></i> ملاحظة مهمة:</strong> مسموح لكل طالب الدخول بنفس الحساب فقط من 3 أجهزة أو متصفحات مختلفة كحد أقصى. تجاوز هذا الحد يؤدي لتعطيل الحساب مؤقتًا.
+      <strong><i class="fas fa-exclamation-triangle"></i> ملاحظة مهمة:</strong> مسموح لكل طالب الدخول بنفس الحساب فقط من 3 أجهزة أو متصفحات مختلفة. إذا تعدى العدد ذلك يتم إغلاق حسابك ويتم منعك من الدخول.
     </div>
 
-    <!-- تم حذف قسم تسجيل الدخول بالكامل -->
-
-    <!-- قسم معلومات المستخدم -->
-    <div class="card" id="userInfoSection">
-      <h2 class="card-title"><i class="fas fa-user"></i> معلومات المستخدم</h2>
+    <div class="card">
+      <h2 class="card-title"><i class="fas fa-user-graduate"></i> الدخول على المحاضرات</h2>
       <div class="form-group">
-        <label class="form-label">البريد الإلكتروني:</label>
-        <input type="email" id="loggedInEmail" class="form-control read-only-input" readonly>
+        <label for="emailInput" class="form-label">البريد الإلكتروني الخاص بالدورة:</label>
+        <input type="email" id="emailInput" class="form-control" placeholder="أدخل بريدك الإلكتروني المسجل في الدورة" required>
       </div>
-      <button onclick="logoutUser()" class="btn btn-warning">
-        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+      <button onclick="loadLecturesDirect()" id="loadLecturesBtn" class="btn btn-primary">
+        <i class="fas fa-book-open"></i> عرض المحاضرات
       </button>
     </div>
 
     <div id="resultArea"></div>
 
-    <div id="studentInfoSection">
+    <div id="studentInfoSection" class="d-none">
       <div class="student-info">
         <div class="info-item">
           <h3><i class="fas fa-user"></i> اسم الطالب</h3>
@@ -52,7 +49,7 @@
       </div>
     </div>
 
-    <div id="lecturesTableSection">
+    <div id="lecturesTableSection" class="d-none">
       <div class="card">
         <h2 class="card-title"><i class="fas fa-book"></i> المحاضرات المتاحة</h2>
         <div class="table-responsive">
@@ -72,14 +69,14 @@
       </div>
     </div>
 
-    <div id="attachmentsSection">
+    <div id="attachmentsSection" class="d-none">
       <div class="card">
         <h2 class="card-title"><i class="fas fa-paperclip"></i> المرفقات الإضافية</h2>
         <div id="attachmentsList"></div>
       </div>
     </div>
 
-    <div id="summarySection">
+    <div id="summarySection" class="d-none">
       <div class="card">
         <h2 class="card-title"><i class="fas fa-edit"></i> كتابة تلخيص جديد</h2>
         <div class="form-group">
@@ -109,7 +106,7 @@
       </div>
     </div>
 
-    <div id="mySummariesSection">
+    <div id="mySummariesSection" class="d-none">
       <div class="card">
         <h2 class="card-title"><i class="fas fa-history"></i> تلخيصاتك السابقة</h2>
         <div id="mySummariesList"></div>
@@ -125,5 +122,18 @@
 
   <script src="js/dataService.js"></script>
   <script src="js/app.js"></script>
+  <script>
+    // دالة جديدة لتحميل المحاضرات مباشرة بناءً على البريد المدخل فقط
+    function loadLecturesDirect() {
+      const email = document.getElementById('emailInput').value.trim();
+      if (!email) {
+        document.getElementById('resultArea').innerHTML =
+          '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> يرجى إدخال البريد الإلكتروني</div>';
+        return;
+      }
+      // استدعاء الدالة الأصلية مع الايميل فقط (بدون الاعتماد على مستخدم محفوظ أو متصفح)
+      loadLectures(email);
+    }
+  </script>
 </body>
 </html>
