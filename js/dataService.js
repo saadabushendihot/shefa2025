@@ -4,6 +4,8 @@ class DataService {
     this.lectures = [];
     this.devices = [];
     this.summaries = [];
+    this.users = [];
+    this.currentUser = null;
     this.loadData();
   }
 
@@ -13,16 +15,18 @@ class DataService {
         this.fetchData('data/accounts.json'),
         this.fetchData('data/lectures.json'),
         this.fetchData('data/devices.json'),
-        this.fetchData('data/summaries.json')
+        this.fetchData('data/summaries.json'),
+        this.fetchData('data/users.json')
       ]);
       
       this.accounts = responses[0] || [];
       this.lectures = responses[1] || [];
       this.devices = responses[2] || [];
       this.summaries = responses[3] || [];
+      this.users = responses[4] || [];
       
-      // تحميل أي بيانات محفوظة محلياً
       this.loadLocalData();
+      this.checkAutoLogin();
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -37,17 +41,62 @@ class DataService {
   }
 
   loadLocalData() {
-    // تحميل التلخيصات من localStorage إذا وجدت
     const localSummaries = localStorage.getItem('lectureSummaries');
     if (localSummaries) {
       this.summaries = JSON.parse(localSummaries);
     }
     
-    // تحميل بيانات الأجهزة من localStorage
     const localDevices = localStorage.getItem('userDevices');
     if (localDevices) {
       this.devices = JSON.parse(localDevices);
     }
+  }
+
+  loginUser(email, password) {
+    const user = this.users.find(u => 
+      u.email.toLowerCase() === email.toLowerCase() && 
+      u.password === this.hashPassword(password)
+    );
+    
+    if (user) {
+      const account = this.accounts.find(acc => 
+        acc['البريد الالكتروني'].toLowerCase() === user.accountId.toLowerCase()
+      );
+      
+      if (!account) {
+        return { success: false, error: "الحساب غير موجود في سجلات الدورة" };
+      }
+      
+      this.currentUser = {
+        ...user,
+        accountData: account
+      };
+      
+      localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+      return { success: true, user: this.currentUser };
+    }
+    
+    return { success: false, error: "البريد الإلكتروني أو كلمة المرور غير صحيحة" };
+  }
+
+  hashPassword(password) {
+    // في تطبيق حقيقي، استخدم مكتبة مثل bcrypt
+    return sha256(password + 'salt'); // استخدام salt بسيط للأمان
+  }
+
+  logoutUser() {
+    this.currentUser = null;
+    localStorage.removeItem('currentUser');
+    return { success: true };
+  }
+
+  checkAutoLogin() {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      this.currentUser = JSON.parse(savedUser);
+      return true;
+    }
+    return false;
   }
 
   getUserDataByEmail(email) {
@@ -111,7 +160,7 @@ class DataService {
         summary['البريد الإلكتروني'].toLowerCase() === email.toLowerCase()
       )
       .map((summary, index) => ({
-        row: index + 2, // لأن الصف الأول هو العناوين
+        row: index + 2,
         lecture: summary['المحاضرة'] || '',
         summary: summary['التلخيص'] || '',
         mark: summary['العلامة'] || 'غير محددة'
@@ -212,5 +261,4 @@ class DataService {
   }
 }
 
-// إنشاء نسخة واحدة من خدمة البيانات
 const dataService = new DataService();
