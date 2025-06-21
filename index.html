@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة المحاضرات والدورات</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.min.js"></script>
+</head>
+<body>
+  <div class="header">
+    <div class="container">
+      <img src="https://i.ibb.co/cSpS2NDk/logo-1.png" alt="الشعار" class="logo">
+      <h1>نظام إدارة المحاضرات والدورات</h1>
+      <p>منصة متكاملة للوصول إلى المحاضرات والمواد التعليمية</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="alert alert-warning">
+      <strong><i class="fas fa-exclamation-triangle"></i> ملاحظة مهمة:</strong> مسموح لكل طالب الدخول بنفس الحساب فقط من 3 أجهزة أو متصفحات مختلفة. إذا تعدى العدد ذلك يتم إغلاق حسابك ويتم منعك من الدخول.
+    </div>
+
+    <div class="card">
+      <h2 class="card-title"><i class="fas fa-user-graduate"></i> معلومات الدخول</h2>
+      
+      <div class="form-group">
+          <label for="browserEmailDisplay" class="form-label">البريد الإلكتروني المسجل في المتصفح:</label>
+          <input type="email" id="browserEmailDisplay" class="form-control read-only-input" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="emailInput" class="form-label">البريد الإلكتروني الخاص بالدورة:</label>
+          <input type="email" id="emailInput" class="form-control" placeholder="يجب أن يكون نفس البريد المسجل" required>
+        </div>
+      
+      <button onclick="loadLectures()" id="loadLecturesBtn" class="btn btn-primary">
+        <i class="fas fa-book-open"></i> عرض المحاضرات
+      </button>
+    </div>
+
+    <div id="resultArea"></div>
+
+    <div id="studentInfoSection" class="d-none">
+      <div class="student-info">
+        <div class="info-item">
+          <h3><i class="fas fa-user"></i> اسم الطالب</h3>
+          <p id="studentNameDisplay"></p>
+        </div>
+        <div class="info-item">
+          <h3><i class="fas fa-id-card"></i> رقم الدورة</h3>
+          <p id="courseNumberDisplay"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="lecturesTableSection" class="d-none">
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-book"></i> المحاضرات المتاحة</h2>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>رقم المحاضرة</th>
+                <th>اسم المحاضرة</th>
+                <th>المستوى</th>
+                <th>الرابط</th>
+              </tr>
+            </thead>
+            <tbody id="lecturesTableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="attachmentsSection" class="d-none">
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-paperclip"></i> المرفقات الإضافية</h2>
+        <div id="attachmentsList"></div>
+      </div>
+    </div>
+
+    <div id="summarySection" class="d-none">
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-edit"></i> كتابة تلخيص جديد</h2>
+        
+        <div class="form-group">
+          <label for="lectureSelect" class="form-label">اختر المحاضرة:</label>
+          <select id="lectureSelect" class="form-control" onchange="displaySelectedLectureDetails()"></select>
+        </div>
+
+        <div id="selectedLectureDetails" class="lecture-details d-none">
+          <h4><i class="fas fa-info-circle"></i> تفاصيل المحاضرة</h4>
+          <p><strong>رقم المحاضرة:</strong> <span id="displayLectureNumber"></span></p>
+          <p><strong>اسم المحاضرة:</strong> <span id="displayLectureName"></span></p>
+          <p><strong>اسم الشيخ المحاضر:</strong> <span id="displayLecturerName"></span></p>
+          <p><strong>عدد نقاط التلخيص:</strong> <span id="displaySummaryPoints"></span></p>
+        </div>
+
+        <div id="summaryWarning" class="alert alert-warning d-none">
+          <h4><i class="fas fa-exclamation-circle"></i> انتبه أخي الطالب</h4>
+          <p>التلخيص هنا مهم جداً لغايات الدراسة عليه في الامتحانات النهائية</p>
+          <p>لذلك احرص على كتابة جميع المعلومات في المحاضرة لتستفيد منها في الامتحانات</p>
+        </div>
+
+        <div class="form-group">
+          <label for="lectureSummary" class="form-label">التلخيص:</label>
+          <textarea id="lectureSummary" class="summary-textarea" placeholder="اكتب تلخيصك هنا..."></textarea>
+        </div>
+
+        <button onclick="submitSummary()" class="btn btn-success">
+          <i class="fas fa-save"></i> حفظ التلخيص
+        </button>
+        
+        <div id="summaryMessage" class="mt-3"></div>
+      </div>
+    </div>
+
+    <div id="mySummariesSection" class="d-none">
+      <div class="card">
+        <h2 class="card-title"><i class="fas fa-history"></i> تلخيصاتك السابقة</h2>
+        <div id="mySummariesList"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>جميع الحقوق محفوظة - مركز شفاء ورحمة للناس © <span id="currentYear"></span></p>
+    </div>
+  </footer>
+
+  <script src="js/dataService.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
