@@ -3,11 +3,9 @@ let studentSummaries = [];
 
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('currentYear').textContent = new Date().getFullYear();
-  
-  if (dataService.checkAutoLogin()) {
-    showUserInfo(dataService.currentUser);
-    loadLectures(dataService.currentUser.accountId || dataService.currentUser.email);
-  }
+  // دخول مباشر باسم وهمي مثلاً
+  showUserInfo({ email: "guest@shefa.com" });
+  loadLectures("guest@shefa.com");
 });
 
 function showLoading(button) {
