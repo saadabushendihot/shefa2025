@@ -1,27 +1,14 @@
-// متغيرات عامة
 let currentLectures = [];
 let studentSummaries = [];
 
-// تهيئة الصفحة عند التحميل
 document.addEventListener('DOMContentLoaded', function() {
-  // تعيين سنة حقوق النشر
   document.getElementById('currentYear').textContent = new Date().getFullYear();
   
-  // عرض البريد الإلكتروني للمتصفح إذا كان متاحاً
-  setBrowserEmailDisplay();
+  if (dataService.checkAutoLogin()) {
+    showUserInfo(dataService.currentUser);
+    loadLectures(dataService.currentUser.accountId || dataService.currentUser.email);
+  }
 });
-
-function setBrowserEmailDisplay() {
-  const emailInput = document.getElementById('browserEmailDisplay');
-  emailInput.value = "جاري التحقق...";
-  
-  // في تطبيق عادي، لا يمكننا الوصول إلى بريد المستخدم المسجل
-  // لذا سنعرض رسالة توضيحية
-  setTimeout(() => {
-    emailInput.value = "يتعذر تحديد البريد في الموقع العادي";
-    emailInput.style.color = "red";
-  }, 1500);
-}
 
 function showLoading(button) {
   const originalText = button.innerHTML;
@@ -74,54 +61,81 @@ function getDeviceId() {
   return storedId;
 }
 
-async function loadLectures() {
+async function loginUser() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const messageDiv = document.getElementById('loginMessage');
+  
+  if (!email || !password) {
+    messageDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> يرجى إدخال البريد الإلكتروني وكلمة المرور</div>';
+    return;
+  }
+
+  const loginBtn = document.getElementById('loginBtn');
+  const originalText = showLoading(loginBtn);
+  
+  const response = await dataService.loginUser(email, password);
+  
+  hideLoading(loginBtn, originalText);
+  
+  if (response.success) {
+    messageDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle"></i> تم تسجيل الدخول بنجاح</div>';
+    showUserInfo(response.user);
+    loadLectures(response.user.accountId || email);
+  } else {
+    messageDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> ${response.error || 'فشل تسجيل الدخول'}</div>`;
+  }
+}
+
+function logoutUser() {
+  dataService.logoutUser();
+  document.getElementById('loginSection').classList.remove('d-none');
+  document.getElementById('userInfoSection').classList.add('d-none');
+  document.getElementById('resultArea').innerHTML = '';
+  document.getElementById('lecturesTableSection').classList.add('d-none');
+  document.getElementById('studentInfoSection').classList.add('d-none');
+  document.getElementById('summarySection').classList.add('d-none');
+  document.getElementById('mySummariesSection').classList.add('d-none');
+}
+
+function showUserInfo(user) {
+  document.getElementById('loginSection').classList.add('d-none');
+  document.getElementById('userInfoSection').classList.remove('d-none');
+  document.getElementById('loggedInEmail').value = user.email;
+}
+
+function showForgotPassword() {
+  alert("لإعادة تعيين كلمة المرور، يرجى التواصل مع إدارة الدورة");
+}
+
+async function loadLectures(email) {
   const loadButton = document.getElementById('loadLecturesBtn');
   const originalButtonText = showLoading(loadButton);
   
-  const enteredEmail = document.getElementById('emailInput').value.trim();
-  const browserEmail = document.getElementById('browserEmailDisplay').value.trim();
-  
-  if (!enteredEmail) {
-    hideLoading(loadButton, originalButtonText);
-    showError("يرجى إدخال البريد الإلكتروني الخاص بالدورة");
-    return;
-  }
-  
-  if (!isValidEmail(enteredEmail)) {
-    hideLoading(loadButton, originalButtonText);
-    showError("تنسيق البريد الإلكتروني غير صحيح");
-    return;
-  }
-  
   const deviceId = getDeviceId();
-  const response = await fetchLecturesWithDeviceCheck(enteredEmail, deviceId);
+  const response = await fetchLecturesWithDeviceCheck(email, deviceId);
   
-  hideLoading(loadButton, originalButtonText);
+  hideLoading(loadButton, originalText);
   
   if (response.error) {
     showError(response.error);
     return;
   }
   
-  // عرض معلومات الطالب
   document.getElementById('studentNameDisplay').textContent = response.studentName || 'غير معروف';
   document.getElementById('courseNumberDisplay').textContent = response.courseNumber || 'غير معروف';
   document.getElementById('studentInfoSection').classList.remove('d-none');
   
-  // عرض جدول المحاضرات
   currentLectures = response.lectures || [];
   populateLecturesTable(currentLectures);
   
-  // عرض المرفقات
   populateAttachments(currentLectures, response.attachments || []);
   
-  // تهيئة قسم التلخيصات
   studentSummaries = response.summaries || [];
   populateLectureSelect(currentLectures, studentSummaries);
   document.getElementById('summarySection').classList.remove('d-none');
   
-  // عرض التلخيصات السابقة
-  loadMySummaries(enteredEmail);
+  loadMySummaries(email);
 }
 
 async function fetchLecturesWithDeviceCheck(email, deviceId) {
@@ -137,7 +151,6 @@ async function fetchLecturesWithDeviceCheck(email, deviceId) {
     return { error: userData.error };
   }
 
-  // تسجيل الجهاز
   const userDevices = dataService.registerDevice(safeEmail, sanitizedDeviceId);
 
   const maxDevicesAllowed = 3;
@@ -238,15 +251,15 @@ function populateLectureSelect(lectures, summaries) {
 }
 
 async function submitSummary() {
-  const email = document.getElementById('emailInput').value.trim();
+  if (!dataService.currentUser) {
+    showError("يجب تسجيل الدخول أولاً");
+    return;
+  }
+
+  const email = dataService.currentUser.accountId || dataService.currentUser.email;
   const summary = document.getElementById('lectureSummary').value.trim();
   const selectedLecture = document.getElementById('lectureSelect').value;
   const messageDiv = document.getElementById('summaryMessage');
-
-  if (!email) {
-    messageDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> يرجى إدخال البريد الإلكتروني.</div>';
-    return;
-  }
 
   if (!selectedLecture) {
     messageDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> يرجى اختيار المحاضرة.</div>';
@@ -266,7 +279,7 @@ async function submitSummary() {
     messageDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle"></i> تم حفظ التلخيص بنجاح.</div>';
     document.getElementById('lectureSummary').value = '';
     document.getElementById('lectureSelect').value = '';
-    loadLectures();
+    loadLectures(email);
   } else {
     messageDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> حدث خطأ أثناء الحفظ. ${(response && response.error) || ''}</div>`;
   }
@@ -400,7 +413,6 @@ function downloadLecture(lectureNumber) {
         </div>
       `;
     } else {
-      // فتح رابط التحميل في نافذة جديدة
       window.open(response.url, '_blank');
       resultArea.innerHTML = '';
     }
